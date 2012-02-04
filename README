@@ -1,0 +1,141 @@
+## Architecture
+
+```
+	stand-alone (SAC)
+"hub" repo 		->			upstream publish origin node
+
+				* often times behind NAT or similar
+				* ...TODO
+				* localized
+				* ...
+
+	neural
+"master" repo 	->			branching share, distribute & access node:
+
+				* 3ile-sync across multiple publishing notes, such as lappy, iphone, etc.
+				* net-wide access as opposed to private LAN AKA "ghost(ing) neural net"
+				* ...TODO
+				* collective
+				* ...
+```
+
+### Fieldnote Implementation of "hub" node tagging sync service/daemon
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Disabled</key>
+			<false/>
+		<key>Label</key>
+			<string>local.fielding.veloci-wiki-update</string>
+		<key>ProgramArguments</key>
+			<array>
+				<string>perl</string>
+				<string>/Users/fielding/bin/vw/vw-update.pl</string>
+				<string>/Users/fielding/notes/</string>
+			</array>
+		<key>StartInterval</key>
+			<integer>300</integer>
+	</dict>
+</plist>
+```
+
+#### /Users/fielding/bin/vw/vw-update.pl
+
+```
+#!/bin/sh
+cd $WATCH_PATH; $GIT add .; $GIT commit -a -m "Notational Velocity Update"; $GIT push;
+```
+
+## inotify event counts
+
+```
+close					2,210
+open					1,104
+nowrite					1,060
+access					  129
+write					   45
+modify					   43
+	A watched file or a file within a watched directory was written to.
+moved					   32
+	A file or directory was moved from or to a watched directory. Note that this is actually implemented simply by listening for both moved_to and moved_from, hence all close events received will be output as one or both of these, not MOVE.
+create					   30
+attrib					   20
+delete					    9
+	A file or directory within a watched directory was deleted.
+update					    9
+moved_from					0
+moved_to					0
+moved_self					0
+unmount						0
+```
+
+```
+$ "git add ."
+
+/home/jeff/notes.git/ MODIFY .goutputstream-5QCS8V
+/home/jeff/notes.git/ MOVED_FROM .goutputstream-5QCS8V
+/home/jeff/notes.git/ MOVED_TO tags_api.wiki
+/home/jeff/notes.git/.git/ DELETE index.lock
+/home/jeff/notes.git/.git/objects/07/ MODIFY tmp_obj_Jem5Sd
+/home/jeff/notes.git/.git/objects/07/ DELETE tmp_obj_Jem5Sd
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MOVED_FROM index.lock
+/home/jeff/notes.git/.git/ MOVED_TO index
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY COMMIT_EDITMSG
+/home/jeff/notes.git/.git/ MODIFY COMMIT_EDITMSG
+/home/jeff/notes.git/.git/objects/4a/ MODIFY tmp_obj_k8KYxb
+/home/jeff/notes.git/.git/objects/4a/ DELETE tmp_obj_k8KYxb
+/home/jeff/notes.git/.git/objects/d6/ MODIFY tmp_obj_NzxAca
+/home/jeff/notes.git/.git/objects/d6/ DELETE tmp_obj_NzxAca
+/home/jeff/notes.git/.git/refs/heads/ MODIFY master.lock
+/home/jeff/notes.git/.git/logs/refs/heads/ MODIFY master
+/home/jeff/notes.git/.git/logs/ MODIFY HEAD
+/home/jeff/notes.git/.git/refs/heads/ MOVED_FROM master.lock
+/home/jeff/notes.git/.git/refs/heads/ MOVED_TO master
+/home/jeff/notes.git/.git/ MOVED_FROM index.lock
+/home/jeff/notes.git/.git/ MOVED_TO index
+/home/jeff/notes.git/.git/refs/remotes/origin/ MODIFY master.lock
+/home/jeff/notes.git/.git/refs/remotes/origin/ MODIFY master.lock
+/home/jeff/notes.git/.git/logs/refs/remotes/origin/ MODIFY master
+/home/jeff/notes.git/.git/refs/remotes/origin/ MOVED_FROM master.lock
+/home/jeff/notes.git/.git/refs/remotes/origin/ MOVED_TO master
+/home/jeff/notes.git/.git/ DELETE index.lock
+```
+
+```
+$ git commit -am "update"
+
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY index.lock
+/home/jeff/notes.git/.git/ MODIFY COMMIT_EDITMSG
+/home/jeff/notes.git/.git/ MODIFY COMMIT_EDITMSG
+/home/jeff/notes.git/.git/ DELETE index.lock
+/home/jeff/notes.git/ DELETE 4913
+/home/jeff/notes.git/ MOVED_FROM tags_api.wiki
+/home/jeff/notes.git/ MODIFY tags_api.wiki
+```
+
+```
+$ git push
+
+/home/jeff/notes.git/ MOVED_FROM tags_api.wiki
+/home/jeff/notes.git/ MODIFY tags_api.wiki
+/home/jeff/notes.git/.git/refs/remotes/origin/ DELETE master.lock
+/home/jeff/notes.git/.git/refs/remotes/origin/ DELETE master.lock
+```
+
+## REFERENCES
+
+* https://github.com/mockko/em-dir-watcher
+* https://github.com/mockko/em-dir-watcher/blob/master/examples/monitor.rb
+* inotifywait, inotifywatch
+* [[http://rubydoc.info/gems/directory_watcher/1.4.1/frames|directory_watcher]]

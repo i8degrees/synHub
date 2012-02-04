@@ -1,0 +1,26 @@
+## TODO / COMPLETED
+
+* create new project folder for notes repo sync script(s)
+* clean up sync relating files within ~/Projects/notes.git/{ref|scratch} folders
+
+## TODO / NEXT
+
+* get rid of logging, verbose, comments & so forth
+* create |path| File.exists? switch case statement within loop
+* relocate git commands within timer loop
+* desktop notifications using notify-send
+* implement git portion of said script within a module -> method -> include type
+* stress test for bugs / carefully look over git workflow
+* implement logging class via module; module -> method -> include type
+* ENV hash
+
+## TODO / FUTURE
+
+* http://daemons.rubyforge.org/
+* Program Arguments
+```
+Usage: sync.rb <watch_path|/home/$USER/notes.git> <interval|60>
+```
+
+* Check to see ruby idiom(s) associated with question mark usage in method name (verbose? and debug?)
+* Replace git shell out wrappers with Grit/Rugged library API
