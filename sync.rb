@@ -11,11 +11,12 @@
 
 require File.join(File.dirname(__FILE__), './lib/hub.rb')
 
-repo = SynHub.new("/home/jeff/notes.git")
-repo.setup_log
-#repo.log("test")
+notes = SynHub.new("/home/jeff/notes.git")
+notes.setup_log('debug', 'file', '/tmp/debug.log', 'debug')
 
-repo.debug = true
-repo.verbose = true
+notes.datestamp_log("test")
 
-repo.add_watch
+notes.debug = true
+notes.verbose = true
+
+notes.add_watch

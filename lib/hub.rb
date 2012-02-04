@@ -11,18 +11,15 @@
 
 require 'em-dir-watcher'
 require File.join(File.dirname(__FILE__), './synlogger.rb')
-require File.join(File.dirname(__FILE__), './git.rb')
 
 class SynHub
+
 	include SynLogger
 
-	# git_dir
-	# repo_dir / work_tree
-	# git_bin
-	# commit_msg / commit_template
-	# @env / ENV[]
-	# shell
-	#
+	attr_accessor :git_bin
+	attr_accessor :notes_repo
+	attr_accessor :interval
+	attr_accessor :commit_msg
 
 	# Public: [describe method call]
 	#
@@ -31,28 +28,19 @@ class SynHub
 	# Returns [describe return type / data]
 	def initialize(notes_repo=nil, env=nil)
 
-		#self.notes_repo = notes_repo
+		self.git_bin = '/usr/bin/git' # env
+		self.notes_repo = notes_repo
+		self.commit_msg = 'Note repo file update' # env
+		self.interval = 60 # timer iterations
 
-		self.debug = false
-		self.verbose = false
-
-		# init/prep EM instance -- watch & timer
-		# exec said instance
-		# fork a daemon
-		# profit $$$
-		#
-
-		#self.log(notes_repo)
 	end
 
-	# private
+	# public
 	def add_watch
-		notes_repo = '/home/jeff/notes.git'
-		#notes_repo = self.notes_repo
 
-		timeout = 4
-		n = 0
-		t = 0
+		notes_repo = self.notes_repo
+
+		#self.interval = 4 if self.debug?
 
 		#EM.set_effective_user "jeff"
 
@@ -62,30 +50,41 @@ class SynHub
 
 				paths.each do |path|
 					full_path = File.join(notes_repo, path)
-					self.log("hi") if self.debug?
-					if File.exists? full_path
-							#timer = EM::PeriodicTimer.new(timeout) do
-								puts("MOD: #{path}")
-								t+=1
-							puts("main iterations: #{t}") if self.debug?
 
-							if self.env?
-							#if self.commit
-								#self.update
+					self.log("#{full_path}") if self.debug?
 
-								n+=1
-								puts("timer iterations: #{n}") if self.debug?
+					timer = EM::PeriodicTimer.new(self.interval) do
+
+						case File.exists? full_path
+
+						when false
+							puts("DEL: #{full_path}")
+							p system("cd /home/jeff/notes.git; /usr/bin/git rm #{full_path}")
+
+							result = system("cd /home/jeff/notes.git; /usr/bin/git commit -am grit-test")
+
+							if result
+								puts("update")
 							else
-								#timer.cancel
-								sleep(5)
-								puts "sleeping"
-							end # end self.status if
-						#end # end timer do
-					else
-						puts("DEL: #{path}")
-					end # end File.exists if
-				end # end paths do
-			end # end repo EM.watch do
+								puts("ERR")
+							end
+							# ...
+						when true
+							puts("MOD: #{full_path}")
+							p system("cd /home/jeff/notes.git; /usr/bin/git add #{full_path}")
+
+							result = system("cd /home/jeff/notes.git; /usr/bin/git commit -a -m grit-test")
+
+							if result
+								puts("update")
+							end
+						else
+							#sleep(5)
+							puts("cancel")
+						end
+					end # end EM::timer loop
+				end # end paths.each do
+			end # end EM::dir.watch loop
 		}
 	end
 end

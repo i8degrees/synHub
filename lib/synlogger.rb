@@ -13,15 +13,8 @@ require 'log4r'
 
 module SynLogger
 
-	#include Log4r
-
-	def verbose=(value)
-		@verbose = value
-	end
-
-	def verbose?
-		return @verbose
-	end
+	attr_accessor :logger
+	attr_accessor :log_level
 
 	def debug=(value)
 		@debug = value
@@ -31,65 +24,106 @@ module SynLogger
 		return @debug
 	end
 
-	def setup_log(log_name=nil, log_path=nil, log_level=nil)
-
-		@logger = Log4r::Logger.new('debug')
-
-		#@logger.outputters << Log4r::Outputter.stderr
-		@logger.outputters << Log4r::FileOutputter.new('debug', :filename => '/tmp/debug.log')
-
-		@logger.debug("Log file initialized")
-
-		return @logger
+	def verbose=(value)
+		@verbose = value
 	end
+
+	def verbose?
+		return @verbose
+	end
+
+	# Public: Initializes a Log4r::Logger instance for input/output logging.
+	#
+	# logger_name	-	Name of the logger instance object
+	# 					(Default: String 'debug')
+	#
+	# outputter		-	Output redirection: < stdin | stderr | stdout | file >
+	#					(Default: String 'stderr')
+	#
+	# logfile 		-	File accessible path of the log file
+	#					(Default: nil)
+	#
+	# log_level		-	can be one of: < debug | error | fatal | info | warn>
+	#					(Default: String 'debug')
+	#
+	# Returns the instance of the Logger object
+	#
+	def setup_log(logger_name='debug', outputter='stderr', logfile=nil, log_level='debug')
+
+		self.logger = Log4r::Logger.new(logger_name)
+		self.log_level = log_level
+
+			case outputter.downcase!
+				when "stdin"
+					self.logger.outputters << Log4r::Outputter.stdin
+
+				when "stderr"
+					self.logger.outputters << Log4r::Outputter.stderr
+
+				when "stdout"
+					self.logger.outputters << Log4r::Outputter.stdout
+
+				when "file"
+					if File.exists? logfile
+						self.logger.outputters << Log4r::FileOutputter.new(logger_name, :filename => logfile)
+					end
+				else
+					self.logger.outputters << Log4r::Outputter.stderr
+				end
+
+		self.logger.debug("Log file initialized")
+
+		return self.logger
+
+	end # setup_log
 
 	def log(msg=nil)
-		@logger.debug(msg)
-	end
-end
 
-=begin
-# Initializes a Logger instance and outputs, at the selected log level, to
-	# either: a) the standard STDERR console; b) user-defined log output file set
-	# at "settings.log_file"
-	#
-	# Usage: log(msg, log_level)
-	#	...where the optional log_level is one of:
-	#
-	#			debug, error, fatal, info, warn
-	#
-	#	...said level defaults to "info".
-	#
-	def log(msg="", log_level="info")
+		self.log_level = log_level
 
-		logger = Log4r::Logger.new('debug')
-
-		if File.exists?(settings.log_file) != true
-			logger.outputters << Log4r::Outputter.stderr
-			#halt 500, "CRIT.err: Logger failed to initiate #{settings.log_file}"
-		else # alright, here we go!
-			logger.outputters << Log4r::FileOutputter.new('debug', :filename => settings.log_file)
-		end
-
-		logger.info('Logger instance initialized')
-
+		if msg != nil
 			case log_level
-				when 'debug', 'diag'
-					logger.debug(msg)
-				when 'error', 'err'
-					logger.error(msg)
-				when 'fatal', 'crit'
-					logger.fatal(msg)
+				when 'diag', 'debug'
+					self.logger.debug(msg)
+				when 'err', 'error'
+					self.logger.error(msg)
+				when 'crit', 'fatal'
+					self.logger.fatal(msg)
 				when 'info'
-					logger.info(msg)
+					self.logger.info(msg)
 				when 'warn'
-					logger.warn(msg)
-			else
-				logger.debug(msg)
-			end
+					self.logger.warn(msg)
+				end
+		else
+			return false
+		end
+	end # log
 
-		# we should never reach this point
-		return true
+	# Returns false on failure
+	# Returns an appended datestamp on the log message upon success
+	#
+	def datestamp_log(msg=nil)
 
-	end
-=end
+		t = Time.now
+
+		if msg != nil
+			self.log("#{t} - #{msg}")
+		else
+			return false
+		end
+	end # datestamp_log
+
+	# Returns false on failure
+	# Returns an inspected variable
+	#
+	def var_dump(var)
+
+		if var != nil
+			self.log ("Stub message. DO ME")
+			#self.logger << Log4r::ObjectFormatter.format_object(var)
+		else
+			return false
+		end
+	end # var_dump
+
+end
