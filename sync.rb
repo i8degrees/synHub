@@ -2,43 +2,31 @@
 #
 # 2012-02/01:jeff
 #
-#	~/Projects/scratch/notes-sync.rb
+#	~/Projects/notes_hub.git/sync.rb
 #
 # 	Watches the notes git repo for changes made to notes and upon said
 # modification, automagically commits said change to the repo and pushes onwards
 # to the "hub" repo.
 #
-#			REFERENCES
-#
-# 1. 	https://github.com/mockko/em-dir-watcher
-#
-#
-#			TODO
-#	1.	http://daemons.rubyforge.org/
-#	2.
 
-#require 'eventmachine'
-#require 'rb-inotify'
 require 'em-dir-watcher'
-require 'grit'
 
 class SynHub
-
-	#include Handler
 
 	attr_writer 	:debug, :verbose
 	attr_accessor 	:notes_repo
 
 	# public
-	def initialize(notes_repo=nil, env=nil) # TODO: ENV hash
+	def initialize(notes_repo=nil, env=nil)
 
 		self.notes_repo = notes_repo
-
-		#@env = { :NOTES_REPO => notes_repo, :SHELL => "/bin/sh", :PWD => "/home/jeff/notes.git",
-		#		 :PATH => "/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/bin:/sbin"
-		#	   }
-
-		# p @env if self.debug?
+		# git_dir
+		# repo_dir / work_tree
+		# git_bin
+		# commit_msg / commit_template
+		# @env / ENV[]
+		# shell
+		#
 
 		# init/prep EM instance -- watch & timer
 		# exec said instance
@@ -67,13 +55,6 @@ class SynHub
 			commit_msg = "Note repo file update"
 		end
 
-		#git_dir = File.join(self.notes_repo, '/.git')
-		#git = Grit::Git.new(git_dir)
-		#git.native(:commit, { :env => ENV['chdir'] = '/home/jeff/notes', :base => true, :raise => true, :timeout => 60, }, "-a -m grit-test")
-
-		#path_exec = "cd #{@env['NOTES_REPO']}"
-		#commit_exec = "git commit -a -m" << " #{commit_msg}"
-		#result = system("#{path_exec} && #{commit_exec}")
 		result = system("cd /home/jeff/notes.git; /usr/bin/git add .; /usr/bin/git commit -am grit-test")
 		p result if self.debug?
 
@@ -93,21 +74,11 @@ class SynHub
 	# ~public
 	def update
 
-		git_dir = File.join(self.notes_repo, '/.git')
-		git = Grit::Git.new(git_dir)
+		if result != 0
+			return false # exit code 1 -- failure state
+		end
 
-		git.native(:push, { :base => true, :raise => true, :timeout => 60, }, "master")
-
-		#update_exec = "git push"
-		#path_exec = "cd #{@env['NOTES_REPO']}"
-		#result = system("#{path_exec} && #{update_exec}")
-		#p result if self.debug?
-
-		#if result != 0
-		#	return false # exit code 1 -- failure state
-		#end
-
-		#return true # exit code 0 -- success state
+		return true # exit code 0 -- success state
 	end
 
 	# Check the exit return status from the git repo in order to determine
@@ -120,17 +91,8 @@ class SynHub
 	# result = system("git add . && git commit -am FUCKYOUNIGGERBUTTFUCKER && git push")
 	def status
 
-		#git_dir = File.join(self.notes_repo, '/.git')
-		#git = Grit::Git.new(git_dir)
-		#result = git.native(:status, { :base => true, :raise => true, :timeout => 60, }, "master")
-
-		#status_exec = "git status"
-		#path_exec = "cd #{@env['NOTES_REPO']}"
-		#result = system("#{path_exec} && #{status_exec}")
 		result = system("cd /home/jeff/notes.git; /usr/bin/git status")
 		p result if self.debug?
-
-		#return true # temp
 
 		if result != true
 			return false # exit code 1 -- failure state
@@ -140,19 +102,18 @@ class SynHub
 	end
 
 	def verbose?
-		return @verbose
+		return self.verbose
 	end
 
 	def debug?
-		return @debug
+		return self.debug
 	end
 
-=begin
 	# private
-	def repo_add_timer(interval=60)
+	def add_watch_timer(interval=60)
 
-		@interval = interval
-		#@loop = loop
+		#interval = interval # timer iterations
+		#loop = loop # main loop iterations
 
 		timer = EM::PeriodicTimer.new(interval) do
 			# git status
@@ -162,7 +123,7 @@ class SynHub
 	end
 =end
 
-	# ~private
+	# private
 	def add_watch
 		notes_repo = self.notes_repo
 
@@ -172,13 +133,7 @@ class SynHub
 
 		#EM.set_effective_user "jeff"
 
-		#if notes_repo != nil
-		#		p notes_repo
-		#	else
-		#		puts "notes_repo is nil"
-		#	end
-
-		#EM.run {
+		EM.run {
 
 			repo = EMDirWatcher.watch notes_repo, :grace_period => 1.0, :exclude => ['.git'] do |paths|
 				#p notes_repo
@@ -187,27 +142,19 @@ class SynHub
 					p full_path
 					if File.exists? full_path
 							#timer = EM::PeriodicTimer.new(timeout) do
-							#if SynNotes::verbose? or SynNotes::debug?
 								puts("MOD: #{path}")
-								#puts("DEL: #{path}")
-								#SynNotes::log("MOD: #{path}")
-								#SynNotes::log("DEL: #{path}")
 								t+=1
 							puts("main iterations: #{t}") if self.debug?
-							#end
 
 							if self.commit
-							#if self.status
 								#self.update
 
 								n+=1
 								puts("timer iterations: #{n}") if self.debug?
-								#SynNotes::log("#{timeout}'n' tick: #{n}") if SynNotes::debug?
 							else
 								#timer.cancel
 								sleep(5)
 								puts "sleeping"
-								#SynNotes::log("ERR: Ptimer(#{timeout}) canceled") if SynNotes::debug?
 							end # end self.status if
 						#end # end timer do
 					else
@@ -215,15 +162,9 @@ class SynHub
 					end # end File.exists if
 				end # end paths do
 			end # end repo EM.watch do
-			#puts "tock"
-			#t+=1
-			#puts("main iteration: #{t}") if self.debug?
-			#SynNotes::log("'t' tick: #{t}") if SynNotes::debug?
-		#}
+		}
 	end
 end
 
-EM.run {
 repo = SynHub.new("/home/jeff/notes.git")
 repo.add_watch
-}
